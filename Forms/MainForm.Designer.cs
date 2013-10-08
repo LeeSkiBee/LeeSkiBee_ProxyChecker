@@ -29,8 +29,6 @@
         private void InitializeComponent()
         {
             this.ProxyGridView = new System.Windows.Forms.DataGridView();
-            this.Proxy = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Status = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.LoadFile = new System.Windows.Forms.Button();
             this.SaveWorkingProxies = new System.Windows.Forms.Button();
             this.SaveFailedProxies = new System.Windows.Forms.Button();
@@ -40,6 +38,9 @@
             this.ThreadsAmount = new System.Windows.Forms.NumericUpDown();
             this.TextProxies = new System.Windows.Forms.Button();
             this.CancelTest = new System.Windows.Forms.Button();
+            this.Proxy = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Status = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CountText = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.ProxyGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ThreadsAmount)).BeginInit();
             this.SuspendLayout();
@@ -48,6 +49,8 @@
             // 
             this.ProxyGridView.AllowUserToAddRows = false;
             this.ProxyGridView.AllowUserToDeleteRows = false;
+            this.ProxyGridView.AllowUserToOrderColumns = true;
+            this.ProxyGridView.AllowUserToResizeRows = false;
             this.ProxyGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.ProxyGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.Proxy,
@@ -56,22 +59,10 @@
             this.ProxyGridView.Name = "ProxyGridView";
             this.ProxyGridView.ReadOnly = true;
             this.ProxyGridView.RowHeadersVisible = false;
+            this.ProxyGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.ProxyGridView.Size = new System.Drawing.Size(606, 176);
             this.ProxyGridView.TabIndex = 0;
-            // 
-            // Proxy
-            // 
-            this.Proxy.HeaderText = "Proxy";
-            this.Proxy.Name = "Proxy";
-            this.Proxy.ReadOnly = true;
-            this.Proxy.Width = 300;
-            // 
-            // Status
-            // 
-            this.Status.HeaderText = "Status";
-            this.Status.Name = "Status";
-            this.Status.ReadOnly = true;
-            this.Status.Width = 300;
+            this.ProxyGridView.RowsAdded += new System.Windows.Forms.DataGridViewRowsAddedEventHandler(this.ProxyGridView_RowsAdded);
             // 
             // LoadFile
             // 
@@ -159,11 +150,36 @@
             this.CancelTest.Text = "Cancel";
             this.CancelTest.UseVisualStyleBackColor = true;
             // 
+            // Proxy
+            // 
+            this.Proxy.HeaderText = "Proxy";
+            this.Proxy.Name = "Proxy";
+            this.Proxy.ReadOnly = true;
+            this.Proxy.Width = 300;
+            // 
+            // Status
+            // 
+            this.Status.HeaderText = "Status";
+            this.Status.Name = "Status";
+            this.Status.ReadOnly = true;
+            this.Status.Width = 300;
+            // 
+            // CountText
+            // 
+            this.CountText.AutoSize = true;
+            this.CountText.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.CountText.Location = new System.Drawing.Point(344, 141);
+            this.CountText.Name = "CountText";
+            this.CountText.Size = new System.Drawing.Size(50, 19);
+            this.CountText.TabIndex = 11;
+            this.CountText.Text = "Count:";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(630, 392);
+            this.Controls.Add(this.CountText);
             this.Controls.Add(this.CancelTest);
             this.Controls.Add(this.TextProxies);
             this.Controls.Add(this.ThreadsAmount);
@@ -186,8 +202,6 @@
         #endregion
 
         private System.Windows.Forms.DataGridView ProxyGridView;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Proxy;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Status;
         private System.Windows.Forms.Button LoadFile;
         private System.Windows.Forms.Button SaveWorkingProxies;
         private System.Windows.Forms.Button SaveFailedProxies;
@@ -197,6 +211,9 @@
         private System.Windows.Forms.NumericUpDown ThreadsAmount;
         private System.Windows.Forms.Button TextProxies;
         private System.Windows.Forms.Button CancelTest;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Proxy;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Status;
+        private System.Windows.Forms.Label CountText;
     }
 }
 
