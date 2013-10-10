@@ -12,6 +12,8 @@ namespace LeeSkiBee_ProxyChecker
 {
     public partial class MainForm : Form
     {
+        private const string STATUS_WORKING = "Working!";
+        private const string STATUS_FAILED = "Failed!";
         private const string COUNT_TEXT_PREFIX = "Count: ";
         private const string PROXY_COLUMN_NAME = "Proxy";
         private object ProxyDataGridLock = new object();
@@ -20,10 +22,10 @@ namespace LeeSkiBee_ProxyChecker
         {
             InitializeComponent();
             string[] proxyList = {"test", "test2"};
-            addProxyListToGrid(proxyList);
+            AddProxyListToGrid(proxyList);
         }
 
-        private void addProxyListToGrid(string[] proxies)
+        private void AddProxyListToGrid(string[] proxies)
         {
             for (int i = 0; i < proxies.Length; i++)
             {
@@ -31,19 +33,39 @@ namespace LeeSkiBee_ProxyChecker
             }
         }
 
-        private void saveFile(string filePath, string contents)
+        private void SaveFile(string filePath, string contents)
         {
-            File.WriteAllText(filePath, contents);
+            try
+            {
+                File.WriteAllText(filePath, contents);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.WriteLine(e.Message);
+                MessageBox.Show("Unable to save file due to insufficient permissions." + 
+                    "Please run this application with an account with the correct permissions" + 
+                    "or save the file to a different folder.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                MessageBox.Show("Unable to create file.");
+            }
+            
         }
 
-        private string getProxiesWithStatusOf(string status)
+        private string GetProxiesWithStatusOf(string searchStatus)
         {
+            if (ProxyGridView.Rows.Count <= 0)
+            {
+                return "";  //Nothing to search through, just return nothing.
+            }
             StringBuilder proxies = new StringBuilder();
-            string currentProxy = null;
+            string currentProxyStatus = null;
             foreach (DataGridViewRow row in ProxyGridView.Rows)
             {
-                currentProxy = row.Cells[PROXY_COLUMN_NAME].Value.ToString();
-                if (currentProxy == status)
+                currentProxyStatus = row.Cells[PROXY_COLUMN_NAME].Value.ToString();
+                if (currentProxyStatus == searchStatus)
                 {
                     proxies.AppendLine(row.Cells[PROXY_COLUMN_NAME].Value.ToString());
                 }
@@ -54,6 +76,53 @@ namespace LeeSkiBee_ProxyChecker
         private void ProxyGridView_RowsAdded(object sender, DataGridViewRowsAddedEventArgs e)
         {
             CountText.Text = COUNT_TEXT_PREFIX + ProxyGridView.Rows.Count;
+        }
+
+        private void LoadFile_Click(object sender, EventArgs e)
+        {
+            string[] fileLines;
+            DialogResult result = OpenFileDialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                try
+                {
+                    fileLines = File.ReadAllLines(OpenFileDialog.FileName);
+                    if (fileLines.Length >= 1)
+                    {
+                        AddProxyListToGrid(fileLines);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    MessageBox.Show("Unable to read file. Please ensure the file exists and the application has sufficient permissions to read it.");
+                }
+            }
+        }
+
+        private void SaveWorkingProxies_Click(object sender, EventArgs e)
+        {
+            DialogResult result = SaveFileDialog.ShowDialog();
+            string fileContent = GetProxiesWithStatusOf(STATUS_WORKING);
+            if (result == DialogResult.OK)  //prevents saves when the user hit cancel.
+            {
+                SaveFile(SaveFileDialog.FileName, fileContent);
+            }
+        }
+
+        private void SaveFailedProxies_Click(object sender, EventArgs e)
+        {
+            DialogResult result = SaveFileDialog.ShowDialog();
+            string fileContent = GetProxiesWithStatusOf(STATUS_FAILED);
+            if (result == DialogResult.OK)  //prevents saves when the user hit cancel.
+            {
+                SaveFile(SaveFileDialog.FileName, fileContent);
+            }
+        }
+
+        private void ClearProxyGrid_Click(object sender, EventArgs e)
+        {
+            ProxyGridView.Rows.Clear();
         }
     }
 }

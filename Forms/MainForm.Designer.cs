@@ -29,6 +29,8 @@
         private void InitializeComponent()
         {
             this.ProxyGridView = new System.Windows.Forms.DataGridView();
+            this.Proxy = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Status = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.LoadFile = new System.Windows.Forms.Button();
             this.SaveWorkingProxies = new System.Windows.Forms.Button();
             this.SaveFailedProxies = new System.Windows.Forms.Button();
@@ -38,11 +40,16 @@
             this.ThreadsAmount = new System.Windows.Forms.NumericUpDown();
             this.TextProxies = new System.Windows.Forms.Button();
             this.CancelTest = new System.Windows.Forms.Button();
-            this.Proxy = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Status = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.CountText = new System.Windows.Forms.Label();
+            this.RequestTimeout = new System.Windows.Forms.NumericUpDown();
+            this.TimeoutText = new System.Windows.Forms.Label();
+            this.MilisecondText = new System.Windows.Forms.Label();
+            this.OpenFileDialog = new System.Windows.Forms.OpenFileDialog();
+            this.SaveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.ClearProxyGrid = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.ProxyGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ThreadsAmount)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.RequestTimeout)).BeginInit();
             this.SuspendLayout();
             // 
             // ProxyGridView
@@ -64,14 +71,29 @@
             this.ProxyGridView.TabIndex = 0;
             this.ProxyGridView.RowsAdded += new System.Windows.Forms.DataGridViewRowsAddedEventHandler(this.ProxyGridView_RowsAdded);
             // 
+            // Proxy
+            // 
+            this.Proxy.HeaderText = "Proxy";
+            this.Proxy.Name = "Proxy";
+            this.Proxy.ReadOnly = true;
+            this.Proxy.Width = 300;
+            // 
+            // Status
+            // 
+            this.Status.HeaderText = "Status";
+            this.Status.Name = "Status";
+            this.Status.ReadOnly = true;
+            this.Status.Width = 300;
+            // 
             // LoadFile
             // 
             this.LoadFile.Location = new System.Drawing.Point(12, 12);
             this.LoadFile.Name = "LoadFile";
             this.LoadFile.Size = new System.Drawing.Size(282, 56);
             this.LoadFile.TabIndex = 1;
-            this.LoadFile.Text = "Load Proxy List";
+            this.LoadFile.Text = "Add Proxy List";
             this.LoadFile.UseVisualStyleBackColor = true;
+            this.LoadFile.Click += new System.EventHandler(this.LoadFile_Click);
             // 
             // SaveWorkingProxies
             // 
@@ -81,6 +103,7 @@
             this.SaveWorkingProxies.TabIndex = 2;
             this.SaveWorkingProxies.Text = "Save Working Proxies";
             this.SaveWorkingProxies.UseVisualStyleBackColor = true;
+            this.SaveWorkingProxies.Click += new System.EventHandler(this.SaveWorkingProxies_Click);
             // 
             // SaveFailedProxies
             // 
@@ -90,6 +113,7 @@
             this.SaveFailedProxies.TabIndex = 3;
             this.SaveFailedProxies.Text = "Save Failed Proxies";
             this.SaveFailedProxies.UseVisualStyleBackColor = true;
+            this.SaveFailedProxies.Click += new System.EventHandler(this.SaveFailedProxies_Click);
             // 
             // URL
             // 
@@ -113,7 +137,7 @@
             // 
             this.ThreadsText.AutoSize = true;
             this.ThreadsText.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.ThreadsText.Location = new System.Drawing.Point(326, 48);
+            this.ThreadsText.Location = new System.Drawing.Point(326, 43);
             this.ThreadsText.Name = "ThreadsText";
             this.ThreadsText.Size = new System.Drawing.Size(68, 21);
             this.ThreadsText.TabIndex = 7;
@@ -121,7 +145,7 @@
             // 
             // ThreadsAmount
             // 
-            this.ThreadsAmount.Location = new System.Drawing.Point(400, 48);
+            this.ThreadsAmount.Location = new System.Drawing.Point(400, 43);
             this.ThreadsAmount.Name = "ThreadsAmount";
             this.ThreadsAmount.Size = new System.Drawing.Size(214, 20);
             this.ThreadsAmount.TabIndex = 8;
@@ -150,20 +174,6 @@
             this.CancelTest.Text = "Cancel";
             this.CancelTest.UseVisualStyleBackColor = true;
             // 
-            // Proxy
-            // 
-            this.Proxy.HeaderText = "Proxy";
-            this.Proxy.Name = "Proxy";
-            this.Proxy.ReadOnly = true;
-            this.Proxy.Width = 300;
-            // 
-            // Status
-            // 
-            this.Status.HeaderText = "Status";
-            this.Status.Name = "Status";
-            this.Status.ReadOnly = true;
-            this.Status.Width = 300;
-            // 
             // CountText
             // 
             this.CountText.AutoSize = true;
@@ -174,11 +184,71 @@
             this.CountText.TabIndex = 11;
             this.CountText.Text = "Count:";
             // 
+            // RequestTimeout
+            // 
+            this.RequestTimeout.Location = new System.Drawing.Point(400, 66);
+            this.RequestTimeout.Maximum = new decimal(new int[] {
+            100000,
+            0,
+            0,
+            0});
+            this.RequestTimeout.Name = "RequestTimeout";
+            this.RequestTimeout.Size = new System.Drawing.Size(214, 20);
+            this.RequestTimeout.TabIndex = 13;
+            this.RequestTimeout.ThousandsSeparator = true;
+            this.RequestTimeout.Value = new decimal(new int[] {
+            2000,
+            0,
+            0,
+            0});
+            // 
+            // TimeoutText
+            // 
+            this.TimeoutText.AutoSize = true;
+            this.TimeoutText.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.TimeoutText.Location = new System.Drawing.Point(324, 66);
+            this.TimeoutText.Name = "TimeoutText";
+            this.TimeoutText.Size = new System.Drawing.Size(70, 21);
+            this.TimeoutText.TabIndex = 12;
+            this.TimeoutText.Text = "Timeout:";
+            // 
+            // MilisecondText
+            // 
+            this.MilisecondText.AutoSize = true;
+            this.MilisecondText.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.MilisecondText.Location = new System.Drawing.Point(400, 89);
+            this.MilisecondText.Name = "MilisecondText";
+            this.MilisecondText.Size = new System.Drawing.Size(131, 19);
+            this.MilisecondText.TabIndex = 14;
+            this.MilisecondText.Text = "( 1000 = 1 Second )";
+            // 
+            // OpenFileDialog
+            // 
+            this.OpenFileDialog.Title = "Select proxy list";
+            // 
+            // SaveFileDialog
+            // 
+            this.SaveFileDialog.Title = "Save proxy list";
+            // 
+            // ClearProxyGrid
+            // 
+            this.ClearProxyGrid.Location = new System.Drawing.Point(12, 355);
+            this.ClearProxyGrid.Name = "ClearProxyGrid";
+            this.ClearProxyGrid.Size = new System.Drawing.Size(131, 23);
+            this.ClearProxyGrid.TabIndex = 15;
+            this.ClearProxyGrid.Text = "Clear";
+            this.ClearProxyGrid.UseVisualStyleBackColor = true;
+            this.ClearProxyGrid.Click += new System.EventHandler(this.ClearProxyGrid_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(630, 392);
+            this.Controls.Add(this.ClearProxyGrid);
+            this.Controls.Add(this.MilisecondText);
+            this.Controls.Add(this.RequestTimeout);
+            this.Controls.Add(this.TimeoutText);
             this.Controls.Add(this.CountText);
             this.Controls.Add(this.CancelTest);
             this.Controls.Add(this.TextProxies);
@@ -194,6 +264,7 @@
             this.Text = "LeeSkiBee\'s Proxy Checker";
             ((System.ComponentModel.ISupportInitialize)(this.ProxyGridView)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ThreadsAmount)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.RequestTimeout)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -214,6 +285,12 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn Proxy;
         private System.Windows.Forms.DataGridViewTextBoxColumn Status;
         private System.Windows.Forms.Label CountText;
+        private System.Windows.Forms.NumericUpDown RequestTimeout;
+        private System.Windows.Forms.Label TimeoutText;
+        private System.Windows.Forms.Label MilisecondText;
+        private System.Windows.Forms.OpenFileDialog OpenFileDialog;
+        private System.Windows.Forms.SaveFileDialog SaveFileDialog;
+        private System.Windows.Forms.Button ClearProxyGrid;
     }
 }
 
