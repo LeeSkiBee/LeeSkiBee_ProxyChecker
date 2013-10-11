@@ -38,7 +38,7 @@
             this.URLText = new System.Windows.Forms.Label();
             this.ThreadsText = new System.Windows.Forms.Label();
             this.ThreadsAmount = new System.Windows.Forms.NumericUpDown();
-            this.TextProxies = new System.Windows.Forms.Button();
+            this.TestProxies = new System.Windows.Forms.Button();
             this.CancelTest = new System.Windows.Forms.Button();
             this.CountText = new System.Windows.Forms.Label();
             this.RequestTimeout = new System.Windows.Forms.NumericUpDown();
@@ -156,14 +156,15 @@
             0,
             0});
             // 
-            // TextProxies
+            // TestProxies
             // 
-            this.TextProxies.Location = new System.Drawing.Point(330, 355);
-            this.TextProxies.Name = "TextProxies";
-            this.TextProxies.Size = new System.Drawing.Size(131, 23);
-            this.TextProxies.TabIndex = 9;
-            this.TextProxies.Text = "Test Proxies";
-            this.TextProxies.UseVisualStyleBackColor = true;
+            this.TestProxies.Location = new System.Drawing.Point(330, 355);
+            this.TestProxies.Name = "TestProxies";
+            this.TestProxies.Size = new System.Drawing.Size(131, 23);
+            this.TestProxies.TabIndex = 9;
+            this.TestProxies.Text = "Test Proxies";
+            this.TestProxies.UseVisualStyleBackColor = true;
+            this.TestProxies.Click += new System.EventHandler(this.TestProxies_Click);
             // 
             // CancelTest
             // 
@@ -251,7 +252,7 @@
             this.Controls.Add(this.TimeoutText);
             this.Controls.Add(this.CountText);
             this.Controls.Add(this.CancelTest);
-            this.Controls.Add(this.TextProxies);
+            this.Controls.Add(this.TestProxies);
             this.Controls.Add(this.ThreadsAmount);
             this.Controls.Add(this.ThreadsText);
             this.Controls.Add(this.URLText);
@@ -280,7 +281,7 @@
         private System.Windows.Forms.Label URLText;
         private System.Windows.Forms.Label ThreadsText;
         private System.Windows.Forms.NumericUpDown ThreadsAmount;
-        private System.Windows.Forms.Button TextProxies;
+        private System.Windows.Forms.Button TestProxies;
         private System.Windows.Forms.Button CancelTest;
         private System.Windows.Forms.DataGridViewTextBoxColumn Proxy;
         private System.Windows.Forms.DataGridViewTextBoxColumn Status;
