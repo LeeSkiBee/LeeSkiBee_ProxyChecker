@@ -12,37 +12,7 @@ namespace LeeSkiBee_ProxyChecker.Net.Proxies
     /// </summary>
     public class ProxyChecker
     {
-
-        private const long PING_FAIL = -1;
-        private const int PING_PROXY_TIME_OUT = 500;
-
-        /// <summary>
-        /// Pings a server to test if the device is online and packet travel time to the server.
-        /// </summary>
-        /// <param name="proxyAddress">The IP Address/Domain Name of the server to ping</param>
-        /// <param name="timeout">How long before the ping times out, in miliseconds.</param>
-        /// <returns>The time the ping response took to be recieved, is MS. Returns -1 for failed pings.</returns>
-        public long PingProxy(string proxyAddress, int timeout = PING_PROXY_TIME_OUT)
-        {
-            try
-            {
-                Ping pingTest = new Ping();
-                PingReply reply = pingTest.Send(proxyAddress, timeout);
-                if (reply != null)
-                {
-                    //The ping was only successful if they reply Status value matches IPStatus.Success
-                    if (reply.Status == IPStatus.Success)
-                    {
-                        return reply.RoundtripTime;
-                    }
-                }
-            }
-            catch (Exception e) //Doesn't matter why the request failed - so just catch all exceptions.
-            {
-                Console.WriteLine(e.Message);
-            }
-            return PING_FAIL;   //If this point is reached then the ping failed/timed out.
-        }
+        public Action<int, bool, int> Result { get; set; }
 
         /// <summary>
         /// Checks if a proxy server allows HTTP requests to be send through it.
@@ -51,7 +21,7 @@ namespace LeeSkiBee_ProxyChecker.Net.Proxies
         /// <param name="proxyAndPort">The IPAddress/Domain Name of the proxy server and the port to use (separated by a colon) - such as "127.0.0.1:8080". </param>
         /// <param name="timeout">How long before the HTTP request times out and is considered to have failed, in miliseconds. </param>
         /// <returns>Returns true if the HTTP request was successful and false if it was not. </returns>
-        public bool CheckProxyHTTPAccess(string URL, string proxyAndPort, int timeout)
+        public bool CheckProxyHTTPAccess(int proxyIndex, int threadIndex, string URL, string proxyAndPort, int timeout)
         {
             try
             {
@@ -65,7 +35,16 @@ namespace LeeSkiBee_ProxyChecker.Net.Proxies
                 {
                     result = response.StatusCode;
                 }
-                return (result == HttpStatusCode.OK);
+                bool successful = (result == HttpStatusCode.OK);
+                try
+                {
+                    Result(proxyIndex, successful, threadIndex);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }     
+                return successful;
             }
             catch (Exception e) //Doesn't matter why the request failed - so just catch all exceptions.
             {
