@@ -23,6 +23,7 @@ namespace LeeSkiBee_ProxyChecker.Net.Proxies
         /// <returns>Returns true if the HTTP request was successful and false if it was not. </returns>
         public bool CheckProxyHTTPAccess(int proxyIndex, int threadIndex, string URL, string proxyAndPort, int timeout)
         {
+            bool successful = false;
             try
             {
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
@@ -31,26 +32,17 @@ namespace LeeSkiBee_ProxyChecker.Net.Proxies
                 request.KeepAlive = false;
                 request.Timeout = timeout;
                 HttpStatusCode result = new HttpStatusCode();
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-                {
-                    result = response.StatusCode;
-                }
-                bool successful = (result == HttpStatusCode.OK);
-                try
-                {
-                    Result(proxyIndex, successful, threadIndex);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }     
-                return successful;
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                result = response.StatusCode;
+                response.Close();
+                successful = (result == HttpStatusCode.OK);
             }
             catch (Exception e) //Doesn't matter why the request failed - so just catch all exceptions.
             {
                 Console.WriteLine(e.Message);
             }
-            return false;       //If this point is reached then the request failed due to an exception.
+            Result(proxyIndex, successful, threadIndex);
+            return successful;       //If this point is reached then the request failed due to an exception.
         }
     }
 }
