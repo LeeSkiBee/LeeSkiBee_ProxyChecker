@@ -9,42 +9,44 @@ using System.Windows.Forms;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net;
 using LeeSkiBee_ProxyChecker.Net.Proxies;
 
 namespace LeeSkiBee_ProxyChecker
 {
     public partial class MainForm : Form
     {
-        private const string STATUS_WORKING = "Working!";
-        private const string STATUS_FAILED = "Failed!";
         private const string COUNT_TEXT_PREFIX = "Count: ";
-        private const string PROXY_COLUMN_NAME = "Proxy";
+        private const int COLUMN_INDEX_PROXY = 0;
         private const int COLUMN_INDEX_STATUS = 1;
 
         private object proxyDataGridLock = new object();
-        private ProxyChecker[] proxyCheckThreads;
-        private int currentTestCount;
+        private Thread[] proxyCheckThreads;
+        private ProxyChecker[] proxyCheckObjects;
 
         public MainForm()
         {
             InitializeComponent();
-            proxyCheckThreads = new ProxyChecker[(int)ThreadsAmount.Maximum];
-            for (int i = 0; i < proxyCheckThreads.Length; i++)
+            int maxChecks = (int)ThreadsAmount.Maximum;
+            proxyCheckThreads = new Thread[maxChecks];
+            proxyCheckObjects = new ProxyChecker[maxChecks];
+            for (int i = 0; i < maxChecks; i++)
             {
-
-                proxyCheckThreads[i] = new ProxyChecker();
-                proxyCheckThreads[i].Result = new Action<int, bool, int>(OnProxyResult);
+                proxyCheckObjects[i] = new ProxyChecker();
+                proxyCheckObjects[i].HTTPCheckResult = new Action<ProxyCheckResult>(this.OnProxyResult);
+                proxyCheckThreads[i] = new Thread(new ParameterizedThreadStart(proxyCheckObjects[i].CheckProxyHTTPAccess_List));
             }
             string[] proxyList = {"test", "test2"};
-            AddProxyListToGrid(proxyList);
+            AddProxyList(proxyList);
         }
 
-        private void AddProxyListToGrid(string[] proxies)
+        private void AddProxyList(string[] proxies)
         {
-            for (int i = 0; i < proxies.Length; i++)
+            foreach (string proxy in proxies)
             {
-                ProxyGridView.Rows.Add(proxies[i]);
+                ProxyList.Items.Add(proxy);
             }
+            ProxyListCountText.Text = ProxyList.Items.Count.ToString();
         }
 
         private void SaveFile(string filePath, string contents)
@@ -68,28 +70,18 @@ namespace LeeSkiBee_ProxyChecker
             
         }
 
-        private string GetProxiesWithStatusOf(string searchStatus)
+        private string GetProxyList(ref ListBox list)
         {
-            if (ProxyGridView.Rows.Count <= 0)
+            if (list.Items.Count <= 0)
             {
                 return "";  //Nothing to search through, just return nothing.
             }
             StringBuilder proxies = new StringBuilder();
-            string currentProxyStatus = null;
-            foreach (DataGridViewRow row in ProxyGridView.Rows)
+            foreach (string row in list.Items)
             {
-                currentProxyStatus = row.Cells[PROXY_COLUMN_NAME].Value.ToString();
-                if (currentProxyStatus == searchStatus)
-                {
-                    proxies.AppendLine(row.Cells[PROXY_COLUMN_NAME].Value.ToString());
-                }
+                proxies.AppendLine(row);
             }
             return proxies.ToString();
-        }
-
-        private void ProxyGridView_RowsAdded(object sender, DataGridViewRowsAddedEventArgs e)
-        {
-            CountText.Text = COUNT_TEXT_PREFIX + ProxyGridView.Rows.Count;
         }
 
         private void LoadFile_Click(object sender, EventArgs e)
@@ -103,7 +95,7 @@ namespace LeeSkiBee_ProxyChecker
                     fileLines = File.ReadAllLines(OpenFileDialog.FileName);
                     if (fileLines.Length >= 1)
                     {
-                        AddProxyListToGrid(fileLines);
+                        AddProxyList(fileLines);
                     }
                 }
                 catch (Exception ex)
@@ -117,7 +109,7 @@ namespace LeeSkiBee_ProxyChecker
         private void SaveWorkingProxies_Click(object sender, EventArgs e)
         {
             DialogResult result = SaveFileDialog.ShowDialog();
-            string fileContent = GetProxiesWithStatusOf(STATUS_WORKING);
+            string fileContent = GetProxyList(ref WorkingProxyList);
             if (result == DialogResult.OK)  //prevents saves when the user hit cancel.
             {
                 SaveFile(SaveFileDialog.FileName, fileContent);
@@ -127,16 +119,11 @@ namespace LeeSkiBee_ProxyChecker
         private void SaveFailedProxies_Click(object sender, EventArgs e)
         {
             DialogResult result = SaveFileDialog.ShowDialog();
-            string fileContent = GetProxiesWithStatusOf(STATUS_FAILED);
+            string fileContent = GetProxyList(ref FailedProxyList);
             if (result == DialogResult.OK)  //prevents saves when the user hit cancel.
             {
                 SaveFile(SaveFileDialog.FileName, fileContent);
             }
-        }
-
-        private void ClearProxyGrid_Click(object sender, EventArgs e)
-        {
-            ProxyGridView.Rows.Clear();
         }
 
         private void LockGUI(bool b)
@@ -147,7 +134,7 @@ namespace LeeSkiBee_ProxyChecker
             URL.Enabled = !b;
             ThreadsAmount.Enabled = !b;
             RequestTimeout.Enabled = !b;
-            ClearProxyGrid.Enabled = !b;
+            ClearProxyList.Enabled = !b;
             TestProxies.Enabled = !b;
             CancelTest.Enabled = b;
         }
@@ -155,34 +142,58 @@ namespace LeeSkiBee_ProxyChecker
         private void TestProxies_Click(object sender, EventArgs e)
         {
             LockGUI(true);
-            currentTestCount = 0;   //@TODO - Prevent race condition by setting value before for loop. 
-            for (int i = 0; i < ((int)ThreadsAmount.Value); i++)
+            int proxiesAmount = ProxyList.Items.Count;
+            int threads = (int)ThreadsAmount.Value;
+            int remainder = (proxiesAmount % threads);
+            int proxiesPerThread = (proxiesAmount - remainder) / threads;
+            string[][] proxies = new string[threads][];
+            int proxyPositionCount = 0;
+            for (int i = 0; i < threads; i++)
             {
-                Task.Factory.StartNew(
-                            () => proxyCheckThreads[i].CheckProxyHTTPAccess(
-                            currentTestCount, 
-                            i, 
-                            URL.Text,
-                            ProxyGridView.Rows[currentTestCount].Cells[PROXY_COLUMN_NAME].Value.ToString(), 
-                            (int)RequestTimeout.Value
-                            )
-                );
+                int proxiesThisThread = proxiesPerThread;
+                if ((i + 1) >= threads)
+                {
+                    proxiesThisThread += remainder;
+                }
+                proxies[i] = new string[proxiesThisThread];
+                for (int n = 0; n < proxiesThisThread; n++)
+                {
+                    proxies[i][n] = ProxyList.Items[proxyPositionCount].ToString();
+                    proxyPositionCount++;
+                }
+                proxyCheckThreads[i].Start(proxies[i]);
+                if (proxyPositionCount >= proxiesAmount)
+                {
+                    break;
+                }
             }
         }
 
-        public void OnProxyResult(int proxyIndex, bool result, int threadIndex)
+        public void OnProxyResult(ProxyCheckResult e)
         {
             lock (proxyDataGridLock)
             {
-                if (result)
+                Action<string, ListBox> start = new Action<string, ListBox>(this.AddProxyToList);
+                if (e.Result)
                 {
-                    ProxyGridView.Rows[proxyIndex].Cells[COLUMN_INDEX_STATUS].Value = STATUS_WORKING;
+                    this.Invoke(start, e.AddressAndPort, WorkingProxyList);
                 }
                 else
                 {
-                    ProxyGridView.Rows[proxyIndex].Cells[COLUMN_INDEX_STATUS].Value = STATUS_FAILED;
+                    this.Invoke(start, e.AddressAndPort, FailedProxyList);
                 }
             }
+        }
+
+        private void AddProxyToList(string proxy, ListBox lb)
+        {
+            lb.Items.Add(proxy);
+            FailedProxyListCountText.Text = lb.Items.Count.ToString();
+        }
+
+        private void ClearProxyList_Click(object sender, EventArgs e)
+        {
+            ProxyList.Items.Clear();
         }
     }
 }
