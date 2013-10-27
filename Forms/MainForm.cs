@@ -16,13 +16,12 @@ namespace LeeSkiBee_ProxyChecker
 {
     public partial class MainForm : Form
     {
-        private const string COUNT_TEXT_PREFIX = "Count: ";
-        private const int COLUMN_INDEX_PROXY = 0;
-        private const int COLUMN_INDEX_STATUS = 1;
-
         private object proxyDataGridLock = new object();
         private Thread[] proxyCheckThreads;
         private ProxyChecker[] proxyCheckObjects;
+        private int expectedResponsesAmount;
+        private int responsesAmount;
+        private bool checkingProxies;
 
         public MainForm()
         {
@@ -34,9 +33,9 @@ namespace LeeSkiBee_ProxyChecker
             {
                 proxyCheckObjects[i] = new ProxyChecker();
                 proxyCheckObjects[i].HTTPCheckResult = new Action<ProxyCheckResult>(this.OnProxyResult);
-                proxyCheckThreads[i] = new Thread(new ParameterizedThreadStart(proxyCheckObjects[i].CheckProxyHTTPAccess_List));
             }
             string[] proxyList = {"test", "test2"};
+            checkingProxies = false;
             AddProxyList(proxyList);
         }
 
@@ -108,18 +107,18 @@ namespace LeeSkiBee_ProxyChecker
 
         private void SaveWorkingProxies_Click(object sender, EventArgs e)
         {
-            DialogResult result = SaveFileDialog.ShowDialog();
-            string fileContent = GetProxyList(ref WorkingProxyList);
-            if (result == DialogResult.OK)  //prevents saves when the user hit cancel.
-            {
-                SaveFile(SaveFileDialog.FileName, fileContent);
-            }
+            SaveProxies(ref WorkingProxyList);
         }
 
         private void SaveFailedProxies_Click(object sender, EventArgs e)
         {
+            SaveProxies(ref FailedProxyList);
+        }
+
+        private void SaveProxies(ref ListBox lb)
+        {
             DialogResult result = SaveFileDialog.ShowDialog();
-            string fileContent = GetProxyList(ref FailedProxyList);
+            string fileContent = GetProxyList(ref lb);
             if (result == DialogResult.OK)  //prevents saves when the user hit cancel.
             {
                 SaveFile(SaveFileDialog.FileName, fileContent);
@@ -141,9 +140,15 @@ namespace LeeSkiBee_ProxyChecker
 
         private void TestProxies_Click(object sender, EventArgs e)
         {
-            LockGUI(true);
+            BeginCheckingProxies();
             int proxiesAmount = ProxyList.Items.Count;
+            expectedResponsesAmount = proxiesAmount;
+            responsesAmount = 0;
             int threads = (int)ThreadsAmount.Value;
+            for (int i = 0; i < threads; i++)
+            {
+                proxyCheckThreads[i] = new Thread(new ParameterizedThreadStart(proxyCheckObjects[i].CheckProxyHTTPAccess_List));
+            }
             int remainder = (proxiesAmount % threads);
             int proxiesPerThread = (proxiesAmount - remainder) / threads;
             string[][] proxies = new string[threads][];
@@ -173,27 +178,71 @@ namespace LeeSkiBee_ProxyChecker
         {
             lock (proxyDataGridLock)
             {
-                Action<string, ListBox> start = new Action<string, ListBox>(this.AddProxyToList);
+                Action<string, ListBox, Label> start = new Action<string, ListBox, Label>(this.AddProxyToList);
                 if (e.Result)
                 {
-                    this.Invoke(start, e.AddressAndPort, WorkingProxyList);
+                    this.Invoke(start, e.AddressAndPort, WorkingProxyList, WorkingProxyListCountText);
                 }
                 else
                 {
-                    this.Invoke(start, e.AddressAndPort, FailedProxyList);
+                    this.Invoke(start, e.AddressAndPort, FailedProxyList, FailedProxyListCountText);
                 }
             }
         }
 
-        private void AddProxyToList(string proxy, ListBox lb)
+        private void AddProxyToList(string proxy, ListBox lb, Label boxCountLabel)
         {
-            lb.Items.Add(proxy);
-            FailedProxyListCountText.Text = lb.Items.Count.ToString();
+            if (proxy != null)
+            {
+                lb.Items.Add(proxy);
+                boxCountLabel.Text = lb.Items.Count.ToString();
+            }
+            responsesAmount += 1;
+            if (responsesAmount >= expectedResponsesAmount)
+            {
+                FinishCheckingProxies();
+            }
+        }
+
+        private void BeginCheckingProxies()
+        {
+            LockGUI(true);
+            checkingProxies = true;
+        }
+
+        private void FinishCheckingProxies()
+        {
+            LockGUI(false);
+            checkingProxies = false;
         }
 
         private void ClearProxyList_Click(object sender, EventArgs e)
         {
             ProxyList.Items.Clear();
+        }
+
+        private void CancelTest_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < proxyCheckThreads.Length; i++)
+            {
+                try
+                {
+                    proxyCheckThreads[i].Abort();
+                }
+                catch (NullReferenceException ex)
+                {
+                    Console.WriteLine(ex.Source);
+                }
+            }
+            FinishCheckingProxies();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (checkingProxies)
+            {
+                this.CancelTest_Click(this, null);
+            }     
         }
     }
 }
