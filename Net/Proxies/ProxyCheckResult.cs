@@ -26,7 +26,7 @@ namespace LeeSkiBee_ProxyChecker.Net.Proxies
             this.Proxy = testProxy;
             if (testProxy == null)
             {
-                this.AddressAndPort = "null";
+                this.AddressAndPort = null;
             }
             else
             {
