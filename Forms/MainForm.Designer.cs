@@ -351,7 +351,11 @@
             this.Controls.Add(this.SaveWorkingProxies);
             this.Controls.Add(this.LoadFile);
             this.Controls.Add(this.panel1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "MainForm";
+            this.ShowIcon = false;
             this.Text = "LeeSkiBee\'s Proxy Checker";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.ThreadsAmount)).EndInit();
