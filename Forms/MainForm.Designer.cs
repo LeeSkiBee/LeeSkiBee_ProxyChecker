@@ -150,6 +150,7 @@
             // 
             // CancelTest
             // 
+            this.CancelTest.Enabled = false;
             this.CancelTest.Location = new System.Drawing.Point(554, 461);
             this.CancelTest.Name = "CancelTest";
             this.CancelTest.Size = new System.Drawing.Size(131, 23);
