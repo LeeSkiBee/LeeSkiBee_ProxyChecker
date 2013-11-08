@@ -17,22 +17,38 @@ namespace LeeSkiBee_ProxyChecker.Net.Proxies
         public int HTTPCheckTimeout = HTTP_CHECK_TIMEOUT;
 
         private const int HTTP_CHECK_TIMEOUT = 2000;
+        private const string ARRAY_TYPE_ID_STRING = "[]";
+
+
+        public void TestConnection(Uri URL, int timeout = HTTP_CHECK_TIMEOUT)
+        {
+            //dummyProxy required because CheckProxyHTTPAccess ignores requests with null values as the proxy
+            //but does not ignore WebProxy objects without the proxy address set.
+            WebProxy dummyProxy = new WebProxy();
+            CheckProxyHTTPAccess(dummyProxy, URL, timeout);
+        }
 
         /// <summary>
         /// Calls CheckProxyHTTPAccess method on a list of proxies.
+        /// 
+        /// Exceptions:
+        ///     System.ArgumentException
         /// </summary>
         /// <param name="proxyList">The proxy list to check through. Acceptable parameter types are string, Uri, and, WebProxy. </param>
         public void CheckProxyHTTPAccess_List(object proxyList)
         {
-            if (proxyList.GetType() == typeof(string[]))
+            if (proxyList.GetType().ToString().Contains(ARRAY_TYPE_ID_STRING))
             {
-                string[] proxies = (string[])proxyList;
+                object[] proxies = (object[])proxyList;
                 for (int i = 0; i < proxies.Length; i++)
                 {
                     CheckProxyHTTPAccess(proxies[i]);
                 }
             }
-
+            else
+            {
+                throw (new ArgumentException("Argument not an array data type."));
+            }
         }
 
         /// <summary>
@@ -96,7 +112,8 @@ namespace LeeSkiBee_ProxyChecker.Net.Proxies
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
                     request.Method = WebRequestMethods.Http.Head;   //Uses Head method to reduce bandwidth usage for requests.
                     request.Proxy = proxyAndPort;
-                    request.KeepAlive = false;
+                    request.AllowAutoRedirect = false;
+                    request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:25.0) Gecko/20100101 Firefox/25.0";
                     request.Timeout = timeout;
                     using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                     {

@@ -23,9 +23,15 @@ namespace LeeSkiBee_ProxyChecker
         private int responsesAmount;
         private bool checkingProxies;
 
+        private const string TEST_SUCCESSFUL = "Connection test result: Successful!";
+        private const string TEST_FAILED = "Connection test result: Failed!";
+        private const string STATUS_IDEAL = "Ideal";
+        private const string STATUS_TESTING = "Testing proxies...";
+
         public MainForm()
         {
             InitializeComponent();
+            StatusText.Text = STATUS_IDEAL;
             int maxChecks = (int)ThreadsAmount.Maximum;
             proxyCheckThreads = new Thread[maxChecks];
             proxyCheckObjects = new ProxyChecker[maxChecks];
@@ -34,9 +40,7 @@ namespace LeeSkiBee_ProxyChecker
                 proxyCheckObjects[i] = new ProxyChecker();
                 proxyCheckObjects[i].HTTPCheckResult = new Action<ProxyCheckResult>(this.OnProxyResult);
             }
-            string[] proxyList = {"test", "test2"};
             checkingProxies = false;
-            AddProxyList(proxyList);
         }
 
         private void AddProxyList(string[] proxies)
@@ -57,16 +61,13 @@ namespace LeeSkiBee_ProxyChecker
             catch (UnauthorizedAccessException e)
             {
                 Console.WriteLine(e.Message);
-                MessageBox.Show("Unable to save file due to insufficient permissions." + 
-                    "Please run this application with an account with the correct permissions" + 
-                    "or save the file to a different folder.");
+                MessageBox.Show("Unable to save file due to insufficient permissions. Please run this application with an account with the correct permissions or save the file to a different folder.");
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 MessageBox.Show("Unable to create file.");
             }
-            
         }
 
         private string GetProxyList(ref ListBox list)
@@ -136,6 +137,7 @@ namespace LeeSkiBee_ProxyChecker
             ClearProxyList.Enabled = !b;
             TestProxies.Enabled = !b;
             CancelTest.Enabled = b;
+            TestConnection.Enabled = !b;
         }
 
         private void TestProxies_Click(object sender, EventArgs e)
@@ -149,8 +151,17 @@ namespace LeeSkiBee_ProxyChecker
             {
                 proxyCheckThreads[i] = new Thread(new ParameterizedThreadStart(proxyCheckObjects[i].CheckProxyHTTPAccess_List));
             }
+            foreach (ProxyChecker checker in proxyCheckObjects)
+            {
+                checker.TestURL = new Uri(URL.Text);
+                checker.HTTPCheckTimeout = (int)(RequestTimeout.Value);
+            }
             int remainder = (proxiesAmount % threads);
             int proxiesPerThread = (proxiesAmount - remainder) / threads;
+            if ((proxiesAmount <= threads) || (proxiesPerThread == 0))
+            {
+                proxiesPerThread = 1;
+            }
             string[][] proxies = new string[threads][];
             int proxyPositionCount = 0;
             for (int i = 0; i < threads; i++)
@@ -178,15 +189,33 @@ namespace LeeSkiBee_ProxyChecker
         {
             lock (proxyDataGridLock)
             {
-                Action<string, ListBox, Label> start = new Action<string, ListBox, Label>(this.AddProxyToList);
-                if (e.Result)
+                if ((e.Proxy != null) && (e.Proxy.Address == null)) 
                 {
-                    this.Invoke(start, e.AddressAndPort, WorkingProxyList, WorkingProxyListCountText);
+                    //No address value in the proxy means the request did not use a proxy
+                    //thus it is a result from a connection test without a proxy.
+                    string resultText = null;
+                    if (e.Result)
+                    {
+                        resultText = TEST_SUCCESSFUL;
+                    }
+                    else
+                    {
+                        resultText = TEST_FAILED;
+                    }
+                    MessageBox.Show(resultText, "Test results");
                 }
                 else
                 {
-                    this.Invoke(start, e.AddressAndPort, FailedProxyList, FailedProxyListCountText);
-                }
+                    Action<string, ListBox, Label> start = new Action<string, ListBox, Label>(this.AddProxyToList);
+                    if (e.Result)
+                    {
+                        this.Invoke(start, e.AddressAndPort, WorkingProxyList, WorkingProxyListCountText);
+                    }
+                    else
+                    {
+                        this.Invoke(start, e.AddressAndPort, FailedProxyList, FailedProxyListCountText);
+                    }
+                } 
             }
         }
 
@@ -208,17 +237,21 @@ namespace LeeSkiBee_ProxyChecker
         {
             LockGUI(true);
             checkingProxies = true;
+            StatusText.Text = STATUS_TESTING;
         }
 
         private void FinishCheckingProxies()
         {
             LockGUI(false);
-            checkingProxies = false;
+            checkingProxies = false;        
+            StatusText.Text = STATUS_IDEAL;
         }
 
         private void ClearProxyList_Click(object sender, EventArgs e)
         {
             ProxyList.Items.Clear();
+            WorkingProxyList.Items.Clear();
+            FailedProxyList.Items.Clear();
         }
 
         private void CancelTest_Click(object sender, EventArgs e)
@@ -243,6 +276,35 @@ namespace LeeSkiBee_ProxyChecker
             {
                 this.CancelTest_Click(this, null);
             }     
+        }
+
+        private void TestConnection_Click(object sender, EventArgs e)
+        {
+            this.Enabled = false;   //Prevent other tasks being started while testing.
+            proxyCheckObjects[0].TestConnection(new Uri(URL.Text), (int)RequestTimeout.Value);
+            this.Enabled = true;    //Re-enable form usage.
+        }
+
+        private void HowToUse_Click(object sender, EventArgs e)
+        {
+            //Building the string in the code means that the only file
+            //required is the EXE file, rather than multiple files.
+            //Should be moved to an external data file if the program becomes considerably more complex.
+            StringBuilder howto = new StringBuilder();
+            howto.AppendLine("1) Add proxies via the 'Add Proxy List' button.");
+            howto.AppendLine();
+            howto.AppendLine("2) Set the URL for testing (the faster the website loads, the better)");
+            howto.AppendLine();
+            howto.AppendLine("3) Set the number of connections (threads) at once");
+            howto.AppendLine();
+            howto.AppendLine("4) Set the timeout value (how long without a response until the request is considered to have failed)");
+            howto.AppendLine();
+            howto.AppendLine("5) Ensure the program has been setup properly by using the test connection button.");
+            howto.AppendLine();
+            howto.AppendLine("6) Click the 'Test proxies' button to being testing and wait for the application to finish.");
+            howto.AppendLine();
+            howto.AppendLine("7) Use the save buttons on the left to save the new lists of working and not-working proxies.");
+            MessageBox.Show(howto.ToString(), "How to use:");
         }
     }
 }
