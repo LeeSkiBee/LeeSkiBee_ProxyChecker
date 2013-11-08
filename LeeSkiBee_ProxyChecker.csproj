@@ -78,6 +78,16 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Screenshots\1_interface.PNG" />
+    <Content Include="Screenshots\2_how_to_use_display.PNG" />
+    <Content Include="Screenshots\3_connection_test.PNG" />
+    <Content Include="Screenshots\4_adding_proxy_list.PNG" />
+    <Content Include="Screenshots\5_proxies_added.PNG" />
+    <Content Include="Screenshots\6_testing_proxies.PNG" />
+    <Content Include="Screenshots\7_finished_checking.PNG" />
+    <Content Include="Screenshots\8_save_proxy_list.PNG" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
