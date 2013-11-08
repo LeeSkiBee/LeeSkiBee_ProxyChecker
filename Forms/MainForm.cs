@@ -142,6 +142,11 @@ namespace LeeSkiBee_ProxyChecker
 
         private void TestProxies_Click(object sender, EventArgs e)
         {
+            if (ProxyList.Items.Count <= 0)
+            {
+                MessageBox.Show("No proxies to test. Add proxies via the 'Add Proxy List' button.", this.Text);
+                return; //No proxies to test - Don't run
+            }
             BeginCheckingProxies();
             int proxiesAmount = ProxyList.Items.Count;
             expectedResponsesAmount = proxiesAmount;
