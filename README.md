@@ -4,7 +4,7 @@ LeeSkiBee's ProxyChecker
 A multi-threaded proxy checker created in C# .NET.
 ________________
 
-Screenshots
+Screenshot
 ----------------
 
 ![Interface](/Screenshots/1_interface.PNG)
